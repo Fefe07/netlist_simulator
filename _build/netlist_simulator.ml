@@ -2,16 +2,24 @@
 open Netlist_ast
 
 let print_only = ref false
-let number_steps = ref (1)
+let number_steps = ref (-1)
 
 let print_bool b = 
   if b then Printf.printf "True" else Printf.printf "False"
 
+let print_bool_tab t = 
+  Printf.printf "[|" ;
+  for i = 0 to Array.length t -2 do 
+    print_bool t.(i);
+    Printf.printf " ; " 
+  done ;
+  print_bool t.(Array.length t - 1) ;
+  Printf.printf "|]\n" 
 
 let print_value v = 
   match v with 
   | VBit b      -> print_bool b ; print_newline () 
-  | VBitArray t -> Array.iter print_bool t 
+  | VBitArray t -> print_bool_tab t 
 
 
 let find (err_mess : string) env x = 
@@ -64,22 +72,26 @@ let simulator (p : program) (number_steps : int) : unit =
   let rams = Hashtbl.create 42 in 
   List.iteri (fun i eq-> let z,e = eq in match e with Eram(addr_size,word_size,_,_,_,_) -> Hashtbl.add rams i (Array.make (1 lsl addr_size) (Array.make word_size false)) | _ -> ()) p.p_eqs ;
   let env = Hashtbl.create 42 in  (* ident - value dictionnary *) 
-    List.iter (fun x ->
-      
-      (* a completer *)
-      Printf.printf "%s = ?" x ;
-      Hashtbl.add env x begin
-      let s = read_line () in 
-      let n = String.length s in 
-      if n >= 1 && s.[0] == 'T' then VBitArray (Array.init (n-1) (fun i -> s.[i+1] = '1'))
-      else (VBit (s == "1"))
-       
-      end
-
-    ) p.p_inputs ; 
+    
+  
 
   for i = 1 to number_steps do 
-    
+    Printf.printf "i = %d\n" i ;
+
+    (* A METTRE DANS LA BOUCLE ? OUI *)
+  List.iter (fun x ->
+      
+    (* a completer - Done*)
+    Printf.printf "%s = ?" x ;
+    Hashtbl.add env x begin
+    let s = read_line () in 
+    let n = String.length s in 
+    if n >1 then VBitArray (let t = Array.init n (fun i -> s.[i] = '1') in  print_bool_tab t ; t) (* n-2 because of the \0 character -> NO !*)
+    else (VBit (s.[0] == '1'))
+     
+    end
+
+  ) p.p_inputs ; 
 
     let value_from_arg a = 
       match a with 
@@ -107,7 +119,13 @@ let simulator (p : program) (number_steps : int) : unit =
           |And -> c && d 
           |Xor -> c && (not d) || (not c) && d
       end)
-        | _ -> failwith "crap"
+        | VBitArray c, VBitArray d ->  Hashtbl.add env z (VBitArray begin match op with 
+          |Or -> Array.map2 (||) c d
+          |Nand -> Array.map2 (fun x y -> not(x&&y)) c d
+          |And -> Array.map2 (&&) c d 
+          |Xor -> Array.map2 (fun x y -> (x && not y)||(not x && y)) c d
+      end)
+        | _ -> failwith "binary operation between bit and tab"
     end
       | Emux (a,b,c) -> Hashtbl.add env z begin 
         match value_from_arg a with 
@@ -115,9 +133,12 @@ let simulator (p : program) (number_steps : int) : unit =
         | _ -> failwith "mauvais argument pour mux"
       end
       | Econcat (a,b) -> Hashtbl.add env z begin
-        match value_from_arg a, value_from_arg b with 
-        | VBitArray c, VBitArray d -> VBitArray (Array.append c d)
-        | _ -> failwith "mauvais argument pour concat"
+        let bit_array_from_bit = function 
+        | VBit b -> VBitArray (Array.make 1 b)
+        | VBitArray t -> VBitArray t in  
+        let VBitArray c, VBitArray d = bit_array_from_bit(value_from_arg a), bit_array_from_bit (value_from_arg b) in 
+        VBitArray (Array.append c d)
+        (* | _ -> failwith "mauvais argument pour concat" *)
       end
       | Eslice(i1,i2,a) -> Hashtbl.add env z begin 
         match value_from_arg a with 
@@ -159,9 +180,9 @@ let compile filename =
     let p = Netlist.read_file filename in
     begin try
         let p = Scheduler.schedule p in
-        Printf.printf "Chemin critique = %d\n" (critical_path p) ;
+        (* Printf.printf "Chemin critique = %d\n" (critical_path p) ;
         let p' = delay_ident p "_l_23" in 
-        Printf.printf "Chemin critique = %d\n" (critical_path p') ;
+        Printf.printf "Chemin critique = %d\n" (critical_path p') ; *)
         simulator p !number_steps 
         
       with

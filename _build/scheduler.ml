@@ -28,7 +28,7 @@ let schedule0 (p : program) : program =
   List.iter (fun eq -> 
     let vars = read_exp eq in
     add_node g (fst eq) ;
-    print_string (fst eq) ;
+    (* print_string (fst eq) ; *)
     List.iter (fun x -> add_edge g x (fst eq)) vars
   ) p.p_eqs ;
   (* print_graph g (Printf.printf "%s  "); *)
@@ -50,10 +50,10 @@ let schedule (p : program) : program =
     let vars = read_exp eq in
     add_node g (fst eq) ;
     List.iter (add_node g) vars ;
-    print_string (fst eq) ;
+    (* print_string (fst eq) ; *)
     List.iter (fun x -> add_edge g x (fst eq)) vars
   ) p.p_eqs ;
-  print_graph g (Printf.printf "%s  ");
+  (* print_graph g (Printf.printf "%s  "); *)
   try 
     let tri = topological g in (* tri est alors une liste de variables triées dans l'ordre, il faut obtenir leurs équations de définition *)
     let list_eqs = List.concat_map (fun x -> if List.mem x p.p_inputs then [] else [List.find (fun eq -> x = (fst eq)) p.p_eqs]) tri in 
