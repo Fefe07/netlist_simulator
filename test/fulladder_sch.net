@@ -1,0 +1,13 @@
+INPUT a, b, c
+OUTPUT r, out_c
+VAR
+  _l_5, _l_6, a, b, c, out_c, r, tmp
+IN
+r = XOR tmp c
+out_c = OR _l_5 _l_6
+tmp = XOR a b
+r = XOR tmp c
+_l_5 = AND tmp c
+_l_6 = AND a b
+out_c = OR _l_5 _l_6
+
