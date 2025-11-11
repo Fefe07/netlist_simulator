@@ -2,7 +2,7 @@
 # Target: /home/felix/.opam/default/bin/ocamlc.opt -config, tags: {  }
 /home/felix/.opam/default/bin/ocamlc.opt -config
 # Target: netlist_simulator.ml.depends, tags: { debug, extension:ml, file:netlist_simulator.ml, ocaml, ocamldep, quiet, traverse, use_menhir }
-/home/felix/.opam/default/bin/ocamldep.opt -modules netlist_simulator.ml > netlist_simulator.ml.depends # cached
+/home/felix/.opam/default/bin/ocamldep.opt -modules netlist_simulator.ml > netlist_simulator.ml.depends
 # Target: netlist.ml.depends, tags: { debug, extension:ml, file:netlist.ml, ocaml, ocamldep, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamldep.opt -modules netlist.ml > netlist.ml.depends # cached
 # Target: netlist_lexer.mll, tags: { extension:mll, file:netlist_lexer.mll, lexer, ocaml, ocamllex, quiet, traverse, use_menhir }
@@ -38,11 +38,31 @@ menhir --ocamlc '/home/felix/.opam/default/bin/ocamlc.opt -g' --infer netlist_pa
 # Target: scheduler.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:scheduler.cmo, file:scheduler.ml, implem, ocaml, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamlc.opt -c -g -o scheduler.cmo scheduler.ml # cached
 # Target: netlist_simulator.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:netlist_simulator.cmo, file:netlist_simulator.ml, implem, ocaml, quiet, traverse, use_menhir }
-/home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_simulator.cmo netlist_simulator.ml # cached
+/home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_simulator.cmo netlist_simulator.ml
++ /home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_simulator.cmo netlist_simulator.ml
+File "netlist_simulator.ml", lines 139-140, characters 8-36:
+139 | ........let VBitArray c, VBitArray d = bit_array_from_bit(value_from_arg a), bit_array_from_bit (value_from_arg b) in 
+140 |         VBitArray (Array.append c d)
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: (VBitArray c, VBit _)
+
+File "netlist_simulator.ml", lines 160-177, characters 33-23:
+160 | .................................let VBitArray t = v in print_bool_tab t ; 
+161 |           let addr = int_of_value v in 
+162 |           Printf.printf "addr = %d\n" addr ;
+163 |           let tmp = ram.(addr) in 
+164 |           (* Il faut calculer ça à la fin !!!!! *)
+...
+174 |                   | _ -> failwith "not a correct value to write")  
+175 |             end
+176 |           ) ;
+177 |           VBitArray tmp
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+  Here is an example of a case that is not matched: VBit _
 # Target: netlist_parser.ml.depends, tags: { debug, extension:ml, file:netlist_parser.ml, ocaml, ocamldep, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamldep.opt -modules netlist_parser.ml > netlist_parser.ml.depends # cached
 # Target: netlist_parser.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:netlist_parser.cmo, file:netlist_parser.ml, implem, ocaml, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_parser.cmo netlist_parser.ml # cached
 # Target: netlist_simulator.byte, tags: { byte, debug, dont_link_with, extension:byte, file:netlist_simulator.byte, link, ocaml, program, quiet, traverse, use_menhir, use_unix }
-/home/felix/.opam/default/bin/ocamlc.opt -I +unix unix.cma -g netlist_ast.cmo netlist_parser.cmo netlist_lexer.cmo netlist_printer.cmo netlist.cmo graph.cmo scheduler.cmo netlist_simulator.cmo -o netlist_simulator.byte # cached
+/home/felix/.opam/default/bin/ocamlc.opt -I +unix unix.cma -g netlist_ast.cmo netlist_parser.cmo netlist_lexer.cmo netlist_printer.cmo netlist.cmo graph.cmo scheduler.cmo netlist_simulator.cmo -o netlist_simulator.byte
 # Compilation successful.

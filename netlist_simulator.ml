@@ -34,7 +34,7 @@ let int_of_bool_array t =
   let s = ref 0 in 
   let n = Array.length t in 
   for i = 0 to n - 1 do 
-    s := !s + (int_of_bool t.(i)) lsl (n-i)
+    s := !s + (int_of_bool t.(i)) lsl (n-i-1)
   done ;
   !s
 
@@ -79,19 +79,19 @@ let simulator (p : program) (number_steps : int) : unit =
     Printf.printf "i = %d\n" i ;
 
     (* A METTRE DANS LA BOUCLE ? OUI *)
-  List.iter (fun x ->
+    List.iter (fun x ->
+        
+      (* a completer - Done*)
+      Printf.printf "%s = ?" x ;
+      Hashtbl.add env x begin
+      let s = read_line () in 
+      let n = String.length s in 
+      if n>1 then VBitArray (let t = Array.init n (fun i -> s.[i] = '1') in  print_bool_tab t ; t) (* n-2 because of the \0 character -> NO !*)
+      else (VBit (s.[0] == '1'))
       
-    (* a completer - Done*)
-    Printf.printf "%s = ?" x ;
-    Hashtbl.add env x begin
-    let s = read_line () in 
-    let n = String.length s in 
-    if n >1 then VBitArray (let t = Array.init n (fun i -> s.[i] = '1') in  print_bool_tab t ; t) (* n-2 because of the \0 character -> NO !*)
-    else (VBit (s.[0] == '1'))
-     
-    end
+      end
 
-  ) p.p_inputs ; 
+    ) p.p_inputs ; 
 
     let value_from_arg a = 
       match a with 
@@ -152,23 +152,38 @@ let simulator (p : program) (number_steps : int) : unit =
       end
       | Eram (addr_size,word_size,read_addr,write_enable,write_addr,write_data) -> 
         (* Tout comme les registres, il faut créer une RAM par instruction *)
-        (* Ces Rams seront identifiées par un indice j(le numero d'instruction) *)
+        (* Ces Rams seront identifiées par un indice j (le numero d'instruction) *)
 
-        let ram = find "Ram" rams j in 
+        let ram = find "RAM" rams j in 
         Hashtbl.add env z begin 
-          let addr = int_of_value (value_from_arg read_addr) in 
+          let v= value_from_arg read_addr in 
+          Printf.printf "v = " ; let VBitArray t = v in print_bool_tab t ; 
+          let addr = int_of_value v in 
+          Printf.printf "addr = %d\n" addr ;
           let tmp = ram.(addr) in 
           (* Il faut calculer ça à la fin !!!!! *)
-          todo :=( fun () -> !todo() ; (if (match value_from_arg write_enable with VBit b -> b | _ -> failwith "write_enable is not a boolean") then ram.(int_of_value (value_from_arg write_addr)) <- (match (value_from_arg write_data) with VBitArray t -> t | _ -> failwith "not a correct value to write")  ));
+          let temp = !todo in 
+          todo :=( fun () ->  
+            Printf.printf "test\n" ;
+            temp () ;
+            begin 
+              if (match value_from_arg write_enable with VBit b -> b | _ -> failwith "write_enable is not a boolean") 
+              then ram.(int_of_value (value_from_arg write_addr)) <- 
+                (match (value_from_arg write_data) with 
+                  | VBitArray t -> Printf.printf "Wrote %d in ram %d at addr %d" (int_of_bool_array t) j (int_of_value (value_from_arg write_addr)) ; t
+                  | _ -> failwith "not a correct value to write")  
+            end
+          ) ;
           VBitArray tmp
         end
         
-      | _ -> failwith "pas implementé"
+      | _ -> assert(false) (* failwith "pas implementé" *)
 
 
     in 
 
     List.iteri execute p.p_eqs ;
+    Printf.printf "Coucou \n" ;
     !todo () ;
     
     List.iter (fun x -> Printf.printf "%s =>" x ; print_value (find "Output" env x)) p.p_outputs
