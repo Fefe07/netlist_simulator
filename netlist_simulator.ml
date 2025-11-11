@@ -21,6 +21,9 @@ let print_value v =
   | VBit b      -> print_bool b ; print_newline () 
   | VBitArray t -> print_bool_tab t 
 
+let print_ram (r:bool array array)(i:int) : unit = 
+  Printf.printf "RAM %d : \n" i;
+  Array.iter (fun x -> Printf.printf "\t"; print_bool_tab x) r
 
 let find (err_mess : string) env x = 
   try Hashtbl.find env x 
@@ -136,7 +139,7 @@ let simulator (p : program) (number_steps : int) : unit =
         let bit_array_from_bit = function 
         | VBit b -> VBitArray (Array.make 1 b)
         | VBitArray t -> VBitArray t in  
-        let VBitArray c, VBitArray d = bit_array_from_bit(value_from_arg a), bit_array_from_bit (value_from_arg b) in 
+        let c,d= match bit_array_from_bit(value_from_arg a), bit_array_from_bit (value_from_arg b)with VBitArray c, VBitArray d -> c,d | _ -> assert false in 
         VBitArray (Array.append c d)
         (* | _ -> failwith "mauvais argument pour concat" *)
       end
@@ -157,20 +160,20 @@ let simulator (p : program) (number_steps : int) : unit =
         let ram = find "RAM" rams j in 
         Hashtbl.add env z begin 
           let v= value_from_arg read_addr in 
-          Printf.printf "v = " ; let VBitArray t = v in print_bool_tab t ; 
+          Printf.printf "v = " ; let t = match v with VBitArray t -> t | _ -> assert false in print_bool_tab t ; 
           let addr = int_of_value v in 
           Printf.printf "addr = %d\n" addr ;
           let tmp = ram.(addr) in 
           (* Il faut calculer ça à la fin !!!!! *)
           let temp = !todo in 
           todo :=( fun () ->  
-            Printf.printf "test\n" ;
+            (* Printf.printf "test\n" ; *)
             temp () ;
             begin 
               if (match value_from_arg write_enable with VBit b -> b | _ -> failwith "write_enable is not a boolean") 
               then ram.(int_of_value (value_from_arg write_addr)) <- 
                 (match (value_from_arg write_data) with 
-                  | VBitArray t -> Printf.printf "Wrote %d in ram %d at addr %d" (int_of_bool_array t) j (int_of_value (value_from_arg write_addr)) ; t
+                  | VBitArray t -> Printf.printf "Wrote %d in ram %d at addr %d\n" (int_of_bool_array t) j (int_of_value (value_from_arg write_addr)) ; t
                   | _ -> failwith "not a correct value to write")  
             end
           ) ;
@@ -183,10 +186,11 @@ let simulator (p : program) (number_steps : int) : unit =
     in 
 
     List.iteri execute p.p_eqs ;
-    Printf.printf "Coucou \n" ;
+    (* Printf.printf "Coucou \n" ; *)
     !todo () ;
     
-    List.iter (fun x -> Printf.printf "%s =>" x ; print_value (find "Output" env x)) p.p_outputs
+    List.iter (fun x -> Printf.printf "%s =>" x ; print_value (find "Output" env x)) p.p_outputs;
+    Hashtbl.iter (fun i r -> print_ram r i) rams 
   done 
 
 
