@@ -73,9 +73,28 @@ let delay_ident (p:program)(x:ident) : program =
 let simulator (p : program) (number_steps : int) : unit =
   (* let ram = Array.make 42 false in  *)
   let rams = Hashtbl.create 42 in 
-  List.iteri (fun i eq-> let z,e = eq in match e with Eram(addr_size,word_size,_,_,_,_) -> Hashtbl.add rams i (Array.make (1 lsl addr_size) (Array.make word_size false)) | _ -> ()) p.p_eqs ;
+  List.iteri (fun i eq -> 
+    let z,e = eq in 
+    match e with 
+    | Eram(addr_size,word_size,_,_,_,_) -> Hashtbl.add rams i (Array.make (1 lsl addr_size) (Array.make word_size false)) 
+    | _ -> ()
+  ) p.p_eqs ;
   let roms = Hashtbl.create 42 in 
-  List.iteri (fun i eq-> let z,e = eq in match e with Erom(addr_size,word_size,_) -> Hashtbl.add roms i (Array.make (1 lsl addr_size) (Array.make word_size false)) | _ -> ()) p.p_eqs ;
+  List.iteri (fun i eq -> 
+    let z,e = eq in 
+    match e with 
+    | Erom(addr_size,word_size,_) -> Printf.printf "ROM numero %d\n" i ; 
+      Hashtbl.add roms i (Array.init  (1 lsl addr_size) (fun j ->
+          Printf.printf "Case %d = ?" j ;
+          let s = read_line () in 
+          let n = String.length s in 
+          let t = Array.init n (fun k -> s.[k] = '1') in
+          print_bool_tab t ;
+          t
+        )
+      )
+    | _ -> ()
+  ) p.p_eqs ;
   let env = ref (Hashtbl.create 42) in  (* ident - value dictionnary *) 
     
 
