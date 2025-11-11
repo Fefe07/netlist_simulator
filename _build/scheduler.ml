@@ -7,7 +7,7 @@ let read_exp (eq : equation) : ident list =
   let extract_vars = function Avar x -> [x] | _ -> [] in  
   match snd eq with
   | Earg a -> extract_vars a
-  | Ereg x -> [x] 
+  | Ereg x -> [] 
   | Enot a -> extract_vars a
   | Ebinop  (binop, a1, a2) -> (extract_vars a1) @ (extract_vars a2)(* OP a1 a2 : boolean operator *)
   | Emux (a1,a2,a3) -> (extract_vars a1) @ (extract_vars a2) @ (extract_vars a3)(* MUX a1 a2 : multiplexer *)
@@ -44,7 +44,7 @@ let schedule (p : program) : program =
   let g = mk_graph () in
   List.iter (add_node g) p.p_inputs ;
   List.iter (add_node g) p.p_outputs ;
-  (* as one can write in register for the beginnig, I add it to the nodes directly *)
+  (* as one can write in register for the beginning, I add it to the nodes directly *)
   List.iter (fun eq -> match (snd eq) with Ereg x -> add_node g x | _ -> ()) p.p_eqs ;
   List.iter (fun eq -> 
     let vars = read_exp eq in

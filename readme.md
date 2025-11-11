@@ -1,3 +1,6 @@
-#Netlist simalator
+#Netlist simulator
 
-This is a readme
+This project was realised for a digital systems course
+
+## ROM 
+To use 

@@ -74,19 +74,21 @@ let simulator (p : program) (number_steps : int) : unit =
   (* let ram = Array.make 42 false in  *)
   let rams = Hashtbl.create 42 in 
   List.iteri (fun i eq-> let z,e = eq in match e with Eram(addr_size,word_size,_,_,_,_) -> Hashtbl.add rams i (Array.make (1 lsl addr_size) (Array.make word_size false)) | _ -> ()) p.p_eqs ;
-  let env = Hashtbl.create 42 in  (* ident - value dictionnary *) 
+  let roms = Hashtbl.create 42 in 
+  List.iteri (fun i eq-> let z,e = eq in match e with Erom(addr_size,word_size,_) -> Hashtbl.add roms i (Array.make (1 lsl addr_size) (Array.make word_size false)) | _ -> ()) p.p_eqs ;
+  let env = ref (Hashtbl.create 42) in  (* ident - value dictionnary *) 
     
-  
+
 
   for i = 1 to number_steps do 
-    Printf.printf "i = %d\n" i ;
-
+    Printf.printf "Step %d:\n" i ;
+    let new_env = Hashtbl.create 42 in 
     (* A METTRE DANS LA BOUCLE ? OUI *)
     List.iter (fun x ->
         
       (* a completer - Done*)
       Printf.printf "%s = ?" x ;
-      Hashtbl.add env x begin
+      Hashtbl.add new_env x begin
       let s = read_line () in 
       let n = String.length s in 
       if n>1 then VBitArray (let t = Array.init n (fun i -> s.[i] = '1') in  print_bool_tab t ; t) (* n-2 because of the \0 character -> NO !*)
@@ -96,9 +98,21 @@ let simulator (p : program) (number_steps : int) : unit =
 
     ) p.p_inputs ; 
 
+    (* On initialise les variables en sortie de registre*)
+    List.iter (fun (x,expr) -> 
+      match expr with 
+      | Ereg a -> 
+        if i = 1 
+        then Hashtbl.add new_env x (VBit false) 
+      else Hashtbl.add new_env x (find "Register value transfer" !env a)
+      | _ -> ()
+    ) p.p_eqs ;
+
+    env := new_env ;
+
     let value_from_arg a = 
       match a with 
-      | Avar x -> find "value_from_arg" env x
+      | Avar x -> find "value_from_arg" !env x
       | Aconst c -> c 
     in 
 
@@ -107,22 +121,22 @@ let simulator (p : program) (number_steps : int) : unit =
     let execute (j:int)(eq : equation) : unit =
       let z, e = eq in
       match e with
-      | Earg a -> Hashtbl.add env z (value_from_arg a)
-      | Ereg x -> Hashtbl.add env z (find "Ereg" env x) 
+      | Earg a -> Hashtbl.add !env z (value_from_arg a)
+      | Ereg x -> () (*Hashtbl.add !env z (find "Ereg" !env x)*) (* Previously treated*) 
       | Enot a -> begin 
         match (value_from_arg a) with 
-        | VBit b -> Hashtbl.add env z (VBit (not b))
+        | VBit b -> Hashtbl.add !env z (VBit (not b))
         | _ -> failwith "negation d'un tableau"
       end
       | Ebinop (op, a, b) -> begin 
         match value_from_arg a, value_from_arg b with
-        | VBit c, VBit d ->  Hashtbl.add env z (VBit begin match op with 
+        | VBit c, VBit d ->  Hashtbl.add !env z (VBit begin match op with 
           |Or -> c || d 
           |Nand -> not (c && d)
           |And -> c && d 
           |Xor -> c && (not d) || (not c) && d
       end)
-        | VBitArray c, VBitArray d ->  Hashtbl.add env z (VBitArray begin match op with 
+        | VBitArray c, VBitArray d ->  Hashtbl.add !env z (VBitArray begin match op with 
           |Or -> Array.map2 (||) c d
           |Nand -> Array.map2 (fun x y -> not(x&&y)) c d
           |And -> Array.map2 (&&) c d 
@@ -130,12 +144,12 @@ let simulator (p : program) (number_steps : int) : unit =
       end)
         | _ -> failwith "binary operation between bit and tab"
     end
-      | Emux (a,b,c) -> Hashtbl.add env z begin 
+      | Emux (a,b,c) -> Hashtbl.add !env z begin 
         match value_from_arg a with 
         | VBit d -> if d then value_from_arg b else value_from_arg c 
         | _ -> failwith "mauvais argument pour mux"
       end
-      | Econcat (a,b) -> Hashtbl.add env z begin
+      | Econcat (a,b) -> Hashtbl.add !env z begin
         let bit_array_from_bit = function 
         | VBit b -> VBitArray (Array.make 1 b)
         | VBitArray t -> VBitArray t in  
@@ -143,12 +157,12 @@ let simulator (p : program) (number_steps : int) : unit =
         VBitArray (Array.append c d)
         (* | _ -> failwith "mauvais argument pour concat" *)
       end
-      | Eslice(i1,i2,a) -> Hashtbl.add env z begin 
+      | Eslice(i1,i2,a) -> Hashtbl.add !env z begin 
         match value_from_arg a with 
         |VBitArray b -> VBitArray(Array.sub b i1 (i2-i1+1))
         | _ -> failwith "mauvais arguments pour slice"
       end
-      |Eselect (i,a) -> Hashtbl.add env z begin 
+      |Eselect (i,a) -> Hashtbl.add !env z begin 
         match value_from_arg a with 
         |VBitArray b -> VBit( b.(i))
         | VBit b -> Printf.printf "i = %d, b = " i ; print_bool b ; failwith "mauvais arguments pour select"
@@ -158,7 +172,7 @@ let simulator (p : program) (number_steps : int) : unit =
         (* Ces Rams seront identifiées par un indice j (le numero d'instruction) *)
 
         let ram = find "RAM" rams j in 
-        Hashtbl.add env z begin 
+        Hashtbl.add !env z begin 
           let v= value_from_arg read_addr in 
           Printf.printf "v = " ; let t = match v with VBitArray t -> t | _ -> assert false in print_bool_tab t ; 
           let addr = int_of_value v in 
@@ -180,7 +194,11 @@ let simulator (p : program) (number_steps : int) : unit =
           VBitArray tmp
         end
         
-      | _ -> assert(false) (* failwith "pas implementé" *)
+      | Erom(addr_size, word_size, read_addr) ->
+        let index = int_of_value (value_from_arg read_addr) in 
+        let rom = find "ROM" roms j in 
+        Hashtbl.add !env z (VBitArray (rom.(index)))
+  
 
 
     in 
@@ -189,7 +207,7 @@ let simulator (p : program) (number_steps : int) : unit =
     (* Printf.printf "Coucou \n" ; *)
     !todo () ;
     
-    List.iter (fun x -> Printf.printf "%s =>" x ; print_value (find "Output" env x)) p.p_outputs;
+    List.iter (fun x -> Printf.printf "%s =>" x ; print_value (find "Output" !env x)) p.p_outputs;
     Hashtbl.iter (fun i r -> print_ram r i) rams 
   done 
 
