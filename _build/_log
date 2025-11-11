@@ -2,7 +2,7 @@
 # Target: /home/felix/.opam/default/bin/ocamlc.opt -config, tags: {  }
 /home/felix/.opam/default/bin/ocamlc.opt -config
 # Target: netlist_simulator.ml.depends, tags: { debug, extension:ml, file:netlist_simulator.ml, ocaml, ocamldep, quiet, traverse, use_menhir }
-/home/felix/.opam/default/bin/ocamldep.opt -modules netlist_simulator.ml > netlist_simulator.ml.depends
+/home/felix/.opam/default/bin/ocamldep.opt -modules netlist_simulator.ml > netlist_simulator.ml.depends # cached
 # Target: netlist.ml.depends, tags: { debug, extension:ml, file:netlist.ml, ocaml, ocamldep, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamldep.opt -modules netlist.ml > netlist.ml.depends # cached
 # Target: netlist_lexer.mll, tags: { extension:mll, file:netlist_lexer.mll, lexer, ocaml, ocamllex, quiet, traverse, use_menhir }
@@ -38,11 +38,11 @@ menhir --ocamlc '/home/felix/.opam/default/bin/ocamlc.opt -g' --infer netlist_pa
 # Target: scheduler.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:scheduler.cmo, file:scheduler.ml, implem, ocaml, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamlc.opt -c -g -o scheduler.cmo scheduler.ml # cached
 # Target: netlist_simulator.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:netlist_simulator.cmo, file:netlist_simulator.ml, implem, ocaml, quiet, traverse, use_menhir }
-/home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_simulator.cmo netlist_simulator.ml
+/home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_simulator.cmo netlist_simulator.ml # cached
 # Target: netlist_parser.ml.depends, tags: { debug, extension:ml, file:netlist_parser.ml, ocaml, ocamldep, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamldep.opt -modules netlist_parser.ml > netlist_parser.ml.depends # cached
 # Target: netlist_parser.cmo, tags: { byte, compile, debug, extension:cmo, extension:ml, file:netlist_parser.cmo, file:netlist_parser.ml, implem, ocaml, quiet, traverse, use_menhir }
 /home/felix/.opam/default/bin/ocamlc.opt -c -g -o netlist_parser.cmo netlist_parser.ml # cached
 # Target: netlist_simulator.byte, tags: { byte, debug, dont_link_with, extension:byte, file:netlist_simulator.byte, link, ocaml, program, quiet, traverse, use_menhir, use_unix }
-/home/felix/.opam/default/bin/ocamlc.opt -I +unix unix.cma -g netlist_ast.cmo netlist_parser.cmo netlist_lexer.cmo netlist_printer.cmo netlist.cmo graph.cmo scheduler.cmo netlist_simulator.cmo -o netlist_simulator.byte
+/home/felix/.opam/default/bin/ocamlc.opt -I +unix unix.cma -g netlist_ast.cmo netlist_parser.cmo netlist_lexer.cmo netlist_printer.cmo netlist.cmo graph.cmo scheduler.cmo netlist_simulator.cmo -o netlist_simulator.byte # cached
 # Compilation successful.
